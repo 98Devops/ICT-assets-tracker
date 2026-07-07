@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { IatsLogo } from '@/components/branding/IatsLogo';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 
 export function LoginPage() {
@@ -9,8 +11,24 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   if (session) return <Navigate to="/" replace />;
+
+  const onForgot = async () => {
+    if (!email) {
+      setError('Enter your email above first, then click "Forgot password?".');
+      return;
+    }
+    setResetting(true);
+    setError(null);
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetting(false);
+    // same message regardless of outcome — don't leak which emails exist
+    toast.success(`If an account exists for ${email}, a reset link is on its way.`);
+  };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -65,6 +83,14 @@ export function LoginPage() {
           )}
           <button type="submit" disabled={submitting} className="btn-primary w-full">
             {submitting ? 'Signing in…' : 'Sign in'}
+          </button>
+          <button
+            type="button"
+            disabled={resetting}
+            onClick={() => void onForgot()}
+            className="w-full text-center text-xs text-ink-muted hover:text-ember transition"
+          >
+            {resetting ? 'Sending…' : 'Forgot password?'}
           </button>
         </form>
         <p className="mt-6 text-center text-xs text-ink-muted">

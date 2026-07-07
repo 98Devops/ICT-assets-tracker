@@ -3,7 +3,11 @@
 > Master state file. Read this first. Status legend: ☐ todo · ◐ in progress · ✅ done-and-verified.
 
 ## Current phase
-**DEPLOYED & DEMOABLE** — https://iats-tracker.netlify.app · Next: polish pass + component tests + in-app QR scanning smoke on a phone.
+**DEPLOYED & DEMOABLE + gap-fix pass done** — https://iats-tracker.netlify.app
+Value pass shipped (CSV import, user-mgmt UI, branded reports + depreciation, QR scanner, org logo,
+due-maintenance stat, sortable columns). Gap pass closed G-5/7/8/9 (see TECHNICAL_DEBT.md).
+Remaining opens are all owner-blocked: G-1 (Supabase access token), G-2 (rotate DB password),
+G-3 (same token), G-4 (Netlify UI link). Suite: 41/41 tests + 14/14 RLS checks.
 
 ## Requirement checklist (from build spec)
 - ✅ Secure auth with role-based access — RLS enforced at DB, proven by `tests/rls-check.mjs` (14/14 against live DB)

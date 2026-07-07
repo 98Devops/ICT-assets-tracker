@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthContext';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
 import { AppShell } from './AppShell';
 import { PageSkeleton } from '@/components/ui/PageSkeleton';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
@@ -23,6 +24,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route
         element={
           <Protected>

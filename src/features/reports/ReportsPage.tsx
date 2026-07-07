@@ -21,31 +21,50 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'labels', label: 'QR labels' },
 ];
 
+// Reports aggregate over full result sets, fetched in pages of 1000 so no
+// single unbounded query is issued and fleets beyond PostgREST's row cap still total correctly.
+const PAGE = 1000;
+
+async function fetchAllPages<T>(build: (fromRow: number, toRow: number) => PromiseLike<{ data: unknown; error: unknown }>): Promise<T[]> {
+  const all: T[] = [];
+  for (let start = 0; ; start += PAGE) {
+    const { data, error } = await build(start, start + PAGE - 1);
+    if (error) throw new Error('Could not load report data.');
+    const rows = (data ?? []) as T[];
+    all.push(...rows);
+    if (rows.length < PAGE) return all;
+  }
+}
+
 function useAllAssets() {
   return useQuery({
     queryKey: ['reports', 'assets'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('assets')
-        .select('*, departments(name), suppliers(name)')
-        .order('asset_tag');
-      if (error) throw new Error('Could not load report data.');
-      return (data ?? []) as (Asset & { departments: { name: string } | null; suppliers: { name: string } | null })[];
-    },
+    queryFn: () =>
+      fetchAllPages<Asset & { departments: { name: string } | null; suppliers: { name: string } | null }>(
+        (fromRow, toRow) =>
+          supabase
+            .from('assets')
+            .select('*, departments(name), suppliers(name)')
+            .order('asset_tag')
+            .range(fromRow, toRow),
+      ),
   });
 }
 
 function useAllMaintenance(from: string, to: string) {
   return useQuery({
     queryKey: ['reports', 'maintenance', from, to],
-    queryFn: async () => {
-      let q = supabase.from('maintenance_logs').select('*, assets(name, asset_tag)').order('date');
-      if (from) q = q.gte('date', from);
-      if (to) q = q.lte('date', to);
-      const { data, error } = await q;
-      if (error) throw new Error('Could not load maintenance data.');
-      return (data ?? []) as (MaintenanceLog & { assets: { name: string; asset_tag: string } })[];
-    },
+    queryFn: () =>
+      fetchAllPages<MaintenanceLog & { assets: { name: string; asset_tag: string } }>((fromRow, toRow) => {
+        let q = supabase
+          .from('maintenance_logs')
+          .select('*, assets(name, asset_tag)')
+          .order('date')
+          .range(fromRow, toRow);
+        if (from) q = q.gte('date', from);
+        if (to) q = q.lte('date', to);
+        return q;
+      }),
   });
 }
 
