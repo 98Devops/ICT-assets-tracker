@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Boxes, Plus, Search } from 'lucide-react';
+import { Boxes, FileUp, Plus, Search } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { can } from '@/features/auth/roles';
 import { useDepartments } from '@/features/admin/lookups';
 import { useAssets } from './api';
 import { AssetForm } from './AssetForm';
+import { ImportWizard } from '@/features/import/ImportWizard';
 import { Modal } from '@/components/ui/Modal';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -25,6 +26,7 @@ export function AssetsPage() {
   const [departmentId, setDepartmentId] = useState('');
   const [page, setPage] = useState(0);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const departments = useDepartments();
   const q = useAssets({ search, category, status, department_id: departmentId, page, pageSize: PAGE_SIZE });
@@ -46,9 +48,14 @@ export function AssetsPage() {
           </p>
         </div>
         {writer && (
-          <button className="btn-primary" onClick={() => setShowForm(true)}>
-            <Plus size={16} /> Register asset
-          </button>
+          <div className="flex gap-2">
+            <button className="btn-secondary" onClick={() => setShowImport(true)}>
+              <FileUp size={16} /> Import CSV
+            </button>
+            <button className="btn-primary" onClick={() => setShowForm(true)}>
+              <Plus size={16} /> Register asset
+            </button>
+          </div>
         )}
       </div>
 
@@ -160,6 +167,9 @@ export function AssetsPage() {
 
       <Modal title="Register asset" open={showForm} onClose={() => setShowForm(false)} wide>
         <AssetForm onDone={() => setShowForm(false)} />
+      </Modal>
+      <Modal title="Import assets from CSV" open={showImport} onClose={() => setShowImport(false)} wide>
+        <ImportWizard onDone={() => setShowImport(false)} />
       </Modal>
     </div>
   );
