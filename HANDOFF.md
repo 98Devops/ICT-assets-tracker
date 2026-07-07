@@ -10,14 +10,24 @@
 - Never mutate the DB by hand without a migration file.
 
 ## Deployment
-- Target: owner's Vercel or Netlify account (git-push deploy). **Not yet deployed.**
-- SPA fallback required (all routes → index.html): Netlify `_redirects` (`/* /index.html 200`) or `vercel.json` rewrites — add at deploy time.
+- **LIVE: https://iats-tracker.netlify.app** (Netlify project `iats-tracker`, ID 8d15f442-3829-49b0-b3f5-f225ed808546, owner's account)
+- Deploy: `npm run build && npx netlify deploy --prod --dir dist` (netlify-cli is a devDependency; env vars also set on Netlify)
+- SPA fallback + security headers in `netlify.toml`.
 
-## Test credentials
-- Demo users (5 roles) to be created by the seed script — **not yet seeded**. Will be listed here with passwords once created.
+## Test credentials (demo org: Kumbudzi High School)
+Password for all: `IATS-demo-2026!`
+| Role | Email |
+|------|-------|
+| super_admin | admin@iats.demo |
+| ict_manager | manager@iats.demo |
+| technician | tech@iats.demo |
+| auditor | auditor@iats.demo |
+| staff | staff@iats.demo |
 
 ## Supabase project
-- **Not yet linked** — owner (Tafara, tfrsuperfx@gmail.com) has an account; credentials pending.
+- `https://fzrxhhktpscrxjrotzon.supabase.co` (region eu-central-1; owner's account, tfrsuperfx@gmail.com)
+- Migrations applied via `node scripts/migrate.mjs` (tracks `_migrations` table; DB password in `.env` as `DB_PASSWORD`)
+- Seed: `node scripts/seed.mjs` · RLS proof: `node tests/rls-check.mjs` (14 checks)
 
 ## Gotchas
 - `src/lib/supabase.ts` throws at startup if env vars are missing (deliberate, fail-fast).
