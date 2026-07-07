@@ -3,7 +3,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/features/auth/AuthContext';
-import { useDepartments, usePeople, useSuppliers } from './lookups';
+import { UserPlus } from 'lucide-react';
+import { useDepartments, useOrganization, usePeople, useSuppliers } from './lookups';
+import { IatsLogo } from '@/components/branding/IatsLogo';
+import { AddUserForm } from './AddUserForm';
+import { Modal } from '@/components/ui/Modal';
 import { PageSkeleton } from '@/components/ui/PageSkeleton';
 import { ROLE_LABELS, type AppRole } from '@/lib/types';
 
@@ -15,6 +19,29 @@ export function AdminPage() {
   const people = usePeople();
   const departments = useDepartments();
   const suppliers = useSuppliers();
+  const org = useOrganization();
+
+  const uploadLogo = useMutation({
+    mutationFn: async (file: File) => {
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png';
+      if (!['png', 'jpg', 'jpeg', 'svg', 'webp'].includes(ext))
+        throw new Error('Use a PNG, JPG, SVG or WebP image.');
+      const path = `${profile!.organization_id}/logo-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('org-logos').upload(path, file);
+      if (upErr) throw new Error('Upload failed. Try a smaller image.');
+      const { error } = await supabase
+        .from('organizations')
+        .update({ logo_path: path })
+        .eq('id', profile!.organization_id);
+      if (error) throw new Error('Could not save the logo.');
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['organization'] });
+      toast.success('Logo updated');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const [showAddUser, setShowAddUser] = useState(false);
   const [newDept, setNewDept] = useState('');
   const [newSupplier, setNewSupplier] = useState('');
   const [newSupplierContact, setNewSupplierContact] = useState('');
@@ -83,8 +110,41 @@ export function AdminPage() {
         <p className="text-sm text-ink-muted">Users, departments and suppliers. New users are created in Supabase Auth (see HANDOFF.md).</p>
       </div>
 
+      <section className="card p-5 flex flex-wrap items-center gap-5">
+        <div className="flex items-center gap-4">
+          {org.data?.logoUrl ? (
+            <img src={org.data.logoUrl} alt="Organization logo" className="h-14 w-14 object-contain rounded" />
+          ) : (
+            <IatsLogo size={56} />
+          )}
+          <div>
+            <h2 className="font-semibold text-sm">Organization branding</h2>
+            <p className="text-xs text-ink-muted">{org.data?.name} · logo shows in the sidebar and on printed reports</p>
+          </div>
+        </div>
+        <label className="btn-secondary cursor-pointer ml-auto">
+          {uploadLogo.isPending ? 'Uploading…' : 'Upload logo'}
+          <input
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            disabled={uploadLogo.isPending}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) uploadLogo.mutate(f);
+              e.target.value = '';
+            }}
+          />
+        </label>
+      </section>
+
       <section className="card overflow-x-auto">
-        <h2 className="px-4 py-3 font-semibold text-sm border-b border-hairline">Users</h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-hairline">
+          <h2 className="font-semibold text-sm">Users</h2>
+          <button className="btn-primary" onClick={() => setShowAddUser(true)}>
+            <UserPlus size={15} /> Add user
+          </button>
+        </div>
         <table className="w-full text-sm">
           <thead className="bg-surface-panel text-left">
             <tr className="border-b border-hairline">
@@ -189,6 +249,10 @@ export function AdminPage() {
           </form>
         </section>
       </div>
+
+      <Modal title="Add user" open={showAddUser} onClose={() => setShowAddUser(false)}>
+        <AddUserForm onDone={() => setShowAddUser(false)} />
+      </Modal>
     </div>
   );
 }

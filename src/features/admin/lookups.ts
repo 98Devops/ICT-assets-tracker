@@ -1,6 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import type { Department, Profile, Supplier } from '@/lib/types';
+import type { Department, Organization, Profile, Supplier } from '@/lib/types';
+
+export function useOrganization() {
+  return useQuery({
+    queryKey: ['organization'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('organizations').select('*').single();
+      if (error) throw new Error('Could not load the organization.');
+      const org = data as Organization & { logo_path: string | null };
+      const logoUrl = org.logo_path
+        ? supabase.storage.from('org-logos').getPublicUrl(org.logo_path).data.publicUrl
+        : null;
+      return { ...org, logoUrl };
+    },
+    staleTime: 10 * 60_000,
+  });
+}
 
 export function useDepartments() {
   return useQuery({

@@ -25,6 +25,19 @@ export function useAssetStats() {
   });
 }
 
+export function useDueMaintenance() {
+  return useQuery({
+    queryKey: ['dashboard', 'due-maintenance'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('v_due_maintenance')
+        .select('*', { count: 'exact', head: true });
+      if (error) return 0;
+      return count ?? 0;
+    },
+  });
+}
+
 export function useWarrantyAlerts() {
   return useQuery({
     queryKey: ['dashboard', 'warranty'],

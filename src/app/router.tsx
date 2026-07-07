@@ -10,6 +10,7 @@ import { AssignmentsPage } from '@/features/assignments/AssignmentsPage';
 import { MaintenancePage } from '@/features/maintenance/MaintenancePage';
 import { ReportsPage } from '@/features/reports/ReportsPage';
 import { AdminPage } from '@/features/admin/AdminPage';
+import { ScanPage } from '@/features/qr/ScanPage';
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { session, profile, loading } = useAuth();
@@ -34,6 +35,7 @@ export function AppRoutes() {
         <Route path="/assets/:id" element={<AssetDetailPage />} />
         <Route path="/assignments" element={<AssignmentsPage />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
+        <Route path="/scan" element={<ScanPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/admin" element={<AdminPage />} />
       </Route>

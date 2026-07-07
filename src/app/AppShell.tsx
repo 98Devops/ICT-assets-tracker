@@ -5,6 +5,7 @@ import {
   ArrowLeftRight,
   Wrench,
   FileBarChart,
+  ScanLine,
   Settings,
   LogOut,
   Menu,
@@ -12,6 +13,7 @@ import {
 import { useState } from 'react';
 import { IatsWordmark } from '@/components/branding/IatsLogo';
 import { useAuth } from '@/features/auth/AuthContext';
+import { useOrganization } from '@/features/admin/lookups';
 import { can } from '@/features/auth/roles';
 import { ROLE_LABELS } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -21,12 +23,14 @@ const NAV = [
   { to: '/assets', label: 'Assets', icon: Boxes },
   { to: '/assignments', label: 'Assignments', icon: ArrowLeftRight },
   { to: '/maintenance', label: 'Maintenance', icon: Wrench },
+  { to: '/scan', label: 'Scan', icon: ScanLine },
   { to: '/reports', label: 'Reports', icon: FileBarChart, gate: 'reports' as const },
   { to: '/admin', label: 'Admin', icon: Settings, gate: 'manageOrg' as const },
 ];
 
 export function AppShell() {
   const { profile, signOut } = useAuth();
+  const org = useOrganization();
   const [open, setOpen] = useState(false);
   if (!profile) return null;
 
@@ -66,7 +70,7 @@ export function AppShell() {
         )}
       >
         <div className="px-4 py-5 border-b border-white/10">
-          <IatsWordmark />
+          <IatsWordmark orgName={org.data?.name} logoUrl={org.data?.logoUrl} />
         </div>
         {nav}
         <div className="px-4 py-4 border-t border-white/10">

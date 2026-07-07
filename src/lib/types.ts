@@ -23,6 +23,7 @@ export type AttachmentKind = 'invoice' | 'warranty' | 'photo' | 'other';
 export interface Organization {
   id: string;
   name: string;
+  logo_path: string | null;
   created_at: string;
 }
 
@@ -69,6 +70,7 @@ export interface Asset {
   location: string | null;
   department_id: string | null;
   notes: string | null;
+  useful_life_years: number;
   created_by: string | null;
   created_at: string;
   updated_at: string;

@@ -22,6 +22,8 @@ export const assetSchema = z.object({
 });
 export type AssetFormValues = z.infer<typeof assetSchema>;
 
+export type AssetSortKey = 'asset_tag' | 'name' | 'cost' | 'purchase_date' | 'status';
+
 export interface AssetFilters {
   search?: string;
   category?: AssetCategory | '';
@@ -29,17 +31,22 @@ export interface AssetFilters {
   department_id?: string;
   page?: number;
   pageSize?: number;
+  sortBy?: AssetSortKey;
+  sortAsc?: boolean;
 }
 
 export function useAssets(filters: AssetFilters) {
-  const { search = '', category = '', status = '', department_id = '', page = 0, pageSize = 20 } = filters;
+  const {
+    search = '', category = '', status = '', department_id = '',
+    page = 0, pageSize = 20, sortBy = 'asset_tag', sortAsc = true,
+  } = filters;
   return useQuery({
-    queryKey: ['assets', search, category, status, department_id, page, pageSize],
+    queryKey: ['assets', search, category, status, department_id, page, pageSize, sortBy, sortAsc],
     queryFn: async () => {
       let q = supabase
         .from('assets')
         .select('*, departments(name), suppliers(name)', { count: 'exact' })
-        .order('asset_tag')
+        .order(sortBy, { ascending: sortAsc, nullsFirst: false })
         .range(page * pageSize, page * pageSize + pageSize - 1);
       if (search) q = q.or(`name.ilike.%${search}%,serial_number.ilike.%${search}%,asset_tag.ilike.%${search}%`);
       if (category) q = q.eq('category', category);

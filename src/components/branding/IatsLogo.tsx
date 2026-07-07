@@ -19,10 +19,14 @@ export function IatsLogo({ className, size = 36 }: { className?: string; size?: 
   );
 }
 
-export function IatsWordmark({ orgName }: { orgName?: string }) {
+export function IatsWordmark({ orgName, logoUrl }: { orgName?: string; logoUrl?: string | null }) {
   return (
     <div className="flex items-center gap-3">
-      <IatsLogo />
+      {logoUrl ? (
+        <img src={logoUrl} alt="" className="h-9 w-9 object-contain rounded bg-white/10 shrink-0" />
+      ) : (
+        <IatsLogo />
+      )}
       <div className="leading-tight">
         <div className="font-display font-semibold text-base text-white">IATS</div>
         <div className="text-[11px] text-white/60 tracking-wide">

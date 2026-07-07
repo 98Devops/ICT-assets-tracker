@@ -4,6 +4,8 @@ import { Download, Printer } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { AssetQr } from '@/features/qr/QrCode';
+import { ReportHeader } from './ReportHeader';
+import { straightLine } from '@/lib/depreciation';
 import { MAINTENANCE_LABELS } from '@/features/maintenance/api';
 import { PageSkeleton } from '@/components/ui/PageSkeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -86,11 +88,13 @@ export function ReportsPage() {
   const valuationByCategory = Object.entries(
     inRange
       .filter((a) => !['retired', 'lost'].includes(a.status))
-      .reduce<Record<string, { count: number; value: number }>>((acc, a) => {
+      .reduce<Record<string, { count: number; value: number; book: number }>>((acc, a) => {
         const k = CATEGORY_LABELS[a.category];
-        acc[k] = acc[k] ?? { count: 0, value: 0 };
+        acc[k] = acc[k] ?? { count: 0, value: 0, book: 0 };
         acc[k].count += 1;
         acc[k].value += a.cost ?? 0;
+        const dep = straightLine(a.cost, a.purchase_date, a.useful_life_years ?? 4);
+        acc[k].book += dep ? dep.bookValue : (a.cost ?? 0);
         return acc;
       }, {}),
   ).sort((x, y) => y[1].value - x[1].value);
@@ -120,6 +124,11 @@ export function ReportsPage() {
         ))}
       </div>
 
+      <ReportHeader
+        title={`${TABS.find((t) => t.id === tab)?.label ?? ''} report`}
+        subtitle={from || to ? `Period: ${from || '…'} → ${to || '…'}` : undefined}
+      />
+
       {tab !== 'labels' && (
         <div className="no-print card p-4 flex flex-wrap items-end gap-4">
           <div>
@@ -137,6 +146,9 @@ export function ReportsPage() {
           <p className="text-xs text-ink-muted pb-2.5">
             {tab === 'maintenance' ? 'Filters by work date.' : 'Filters by purchase date.'}
           </p>
+          <button className="btn-secondary ml-auto" onClick={() => window.print()}>
+            <Printer size={15} /> Print report
+          </button>
         </div>
       )}
 
@@ -184,7 +196,12 @@ export function ReportsPage() {
               onClick={() =>
                 downloadCsv(
                   'iats-valuation.csv',
-                  valuationByCategory.map(([category, v]) => ({ category, count: v.count, value: v.value })),
+                  valuationByCategory.map(([category, v]) => ({
+                    category,
+                    count: v.count,
+                    purchase_value: v.value,
+                    book_value: Math.round(v.book * 100) / 100,
+                  })),
                 )
               }
             >
@@ -196,7 +213,8 @@ export function ReportsPage() {
               <tr className="border-b border-hairline">
                 <th className="px-4 py-2 font-medium">Category</th>
                 <th className="px-4 py-2 font-medium text-right">Assets</th>
-                <th className="px-4 py-2 font-medium text-right">Value</th>
+                <th className="px-4 py-2 font-medium text-right">Purchase value</th>
+                <th className="px-4 py-2 font-medium text-right">Book value (straight-line)</th>
               </tr>
             </thead>
             <tbody>
@@ -205,6 +223,7 @@ export function ReportsPage() {
                   <td className="px-4 py-2">{cat}</td>
                   <td className="px-4 py-2 text-right font-mono text-xs">{v.count}</td>
                   <td className="px-4 py-2 text-right font-mono text-xs">{formatMoney(v.value)}</td>
+                  <td className="px-4 py-2 text-right font-mono text-xs">{formatMoney(v.book)}</td>
                 </tr>
               ))}
               <tr className="bg-surface-panel font-semibold">
@@ -214,6 +233,9 @@ export function ReportsPage() {
                 </td>
                 <td className="px-4 py-2 text-right font-mono text-xs">
                   {formatMoney(valuationByCategory.reduce((s, [, v]) => s + v.value, 0))}
+                </td>
+                <td className="px-4 py-2 text-right font-mono text-xs">
+                  {formatMoney(valuationByCategory.reduce((s, [, v]) => s + v.book, 0))}
                 </td>
               </tr>
             </tbody>

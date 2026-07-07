@@ -3,7 +3,7 @@ import { Plus, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { can } from '@/features/auth/roles';
 import { useOpenAssignments } from '@/features/assignments/api';
-import { useAssetStats, useRecentActivity, useWarrantyAlerts } from './api';
+import { useAssetStats, useDueMaintenance, useRecentActivity, useWarrantyAlerts } from './api';
 import { PageSkeleton } from '@/components/ui/PageSkeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { formatDate, formatMoney } from '@/lib/utils';
@@ -24,6 +24,7 @@ export function DashboardPage() {
   const alerts = useWarrantyAlerts();
   const open = useOpenAssignments();
   const activity = useRecentActivity();
+  const due = useDueMaintenance();
 
   if (stats.isLoading) return <PageSkeleton />;
   if (stats.isError)
@@ -46,11 +47,12 @@ export function DashboardPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <StatCard label="Total assets" value={s.total} sub={`${formatMoney(s.active_value)} in service`} />
         <StatCard label="Active" value={s.active} />
         <StatCard label="Faulty" value={s.faulty} accent={s.faulty > 0} />
         <StatCard label="In repair" value={s.in_repair} />
+        <StatCard label="Due maintenance" value={due.data ?? '—'} accent={(due.data ?? 0) > 0} sub="no service in 180 days" />
         <StatCard label="In custody" value={open.data?.length ?? '—'} />
       </div>
 

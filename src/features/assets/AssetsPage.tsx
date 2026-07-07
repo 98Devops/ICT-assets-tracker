@@ -4,7 +4,7 @@ import { Boxes, FileUp, Plus, Search } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { can } from '@/features/auth/roles';
 import { useDepartments } from '@/features/admin/lookups';
-import { useAssets } from './api';
+import { useAssets, type AssetSortKey } from './api';
 import { AssetForm } from './AssetForm';
 import { ImportWizard } from '@/features/import/ImportWizard';
 import { Modal } from '@/components/ui/Modal';
@@ -27,9 +27,21 @@ export function AssetsPage() {
   const [page, setPage] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [sortBy, setSortBy] = useState<AssetSortKey>('asset_tag');
+  const [sortAsc, setSortAsc] = useState(true);
 
   const departments = useDepartments();
-  const q = useAssets({ search, category, status, department_id: departmentId, page, pageSize: PAGE_SIZE });
+  const q = useAssets({ search, category, status, department_id: departmentId, page, pageSize: PAGE_SIZE, sortBy, sortAsc });
+
+  const toggleSort = (key: AssetSortKey) => {
+    if (sortBy === key) setSortAsc((a) => !a);
+    else {
+      setSortBy(key);
+      setSortAsc(true);
+    }
+    setPage(0);
+  };
+  const sortIndicator = (key: AssetSortKey) => (sortBy === key ? (sortAsc ? ' ↑' : ' ↓') : '');
 
   if (q.isLoading) return <PageSkeleton />;
   if (q.isError) return <ErrorState message={(q.error as Error).message} onRetry={() => void q.refetch()} />;
@@ -112,13 +124,21 @@ export function AssetsPage() {
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-surface-panel text-left">
               <tr className="border-b border-hairline">
-                <th className="px-4 py-3 font-medium">Tag</th>
-                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">
+                  <button className="hover:text-ember" onClick={() => toggleSort('asset_tag')}>Tag{sortIndicator('asset_tag')}</button>
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <button className="hover:text-ember" onClick={() => toggleSort('name')}>Name{sortIndicator('name')}</button>
+                </th>
                 <th className="px-4 py-3 font-medium hidden md:table-cell">Category</th>
                 <th className="px-4 py-3 font-medium hidden lg:table-cell">Department</th>
                 <th className="px-4 py-3 font-medium hidden lg:table-cell">Location</th>
-                <th className="px-4 py-3 font-medium hidden sm:table-cell">Cost</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium hidden sm:table-cell">
+                  <button className="hover:text-ember" onClick={() => toggleSort('cost')}>Cost{sortIndicator('cost')}</button>
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <button className="hover:text-ember" onClick={() => toggleSort('status')}>Status{sortIndicator('status')}</button>
+                </th>
               </tr>
             </thead>
             <tbody>
